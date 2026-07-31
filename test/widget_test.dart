@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:health_action_plan/main.dart';
-import 'package:health_action_plan/features/view/health_action_plan_launcher.dart';
 
 void main() {
   testWidgets('App initialization smoke test', (WidgetTester tester) async {
@@ -25,7 +24,7 @@ void main() {
     // Verify that the Launcher starts in a loading state
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    // Since Firebase and SharedPreferences are initialized in main/initState,
-    // further testing here would require mocking those plugins.
+    // Since SharedPreferences is initialized in initState, further testing
+    // here would require mocking that plugin.
   });
 }
