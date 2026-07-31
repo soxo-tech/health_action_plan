@@ -1,25 +1,11 @@
-import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:health_action_plan/features/view/health_action_plan_launcher.dart';
-import 'package:health_action_plan/firebase_options.dart';
 
 /// The entry point of the application.
 ///
 /// Ensures that plugin services are initialized before running the app.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  try {
-    // Check if Firebase is already initialized (important for addon modules)
-    if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-    }
-  } catch (e) {
-    log('Firebase initialization failed or was already initialized: $e');
-  }
 
   // Retrieve values from environment variables or native bridge
   const String opno = String.fromEnvironment('OPNO', defaultValue: '');
@@ -49,7 +35,7 @@ class HealthActionPlanApp extends StatelessWidget {
       home: HealthActionPlanLauncher(
         opno: opno,
         token: token,
-        baseURL: '', // Added default for testing
+        // baseURL: '', // Added default for testing
         dbPtr: '', // Added default for testing
         isStandalone: isStandalone,
         // You can also pass baseURL and dbPtr here if needed

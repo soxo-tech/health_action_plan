@@ -32,6 +32,7 @@ class SharedPreferenceController {
     String? token,
     String? baseURL,
     String? dbPtr,
+    String? opno,
   }) async {
     final pref = await SharedPreferencesService.prefs;
     if (token != null) {
@@ -42,6 +43,10 @@ class SharedPreferenceController {
     }
     if (dbPtr != null) {
       await pref.setString("dbptr", dbPtr);
+    }
+    // Sent as the `realId` request header on every module API call.
+    if (opno != null) {
+      await pref.setString("realId", opno);
     }
   }
 }

@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:health_action_plan/features/core/env.dart';
 import 'package:health_action_plan/features/model/health_action_plan_model.dart';
 import 'package:health_action_plan/features/model/reports_list_model.dart';
-import 'package:health_action_plan/features/services/api_services.dart';
+import 'package:health_action_plan/features/services/security_service/secure_fetch.dart';
 
 /// Manages the health score data.
 class HealthActionPlanProvider extends ChangeNotifier {
@@ -22,9 +22,9 @@ class HealthActionPlanProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await ApiService.apiMethodSetup(
-        method: ApiMethod.get,
-        url: Env().healthActionPlanAPI(opno),
+     final response = await secureFetch(
+        method: 'GET',
+        endpoint: Env().healthActionPlanAPI(opno),
       );
 
       final json = response?.data;

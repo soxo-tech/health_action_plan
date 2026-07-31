@@ -1,10 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:health_action_plan/features/core/env.dart';
 import 'package:health_action_plan/features/services/navigation_services.dart';
 import 'package:health_action_plan/features/services/shared_preferences.dart';
 
@@ -64,24 +61,9 @@ class ApiService {
   }) async {
     final pref = await SharedPreferencesService.prefs;
 
-    //Refresh token test url
-    //https://nuradubaidevapi.onedesk.app/dev/auth/web-login
-    // Test baseURL
-    // String baseURL = "https://nura-api-india-release-20.onedesk.app:8413/dev/";
     String? baseURL = pref.getString('url');
     String dbptr = pref.getString('dbptr') ?? "";
 
-    // String dbptr = "nurapho";
-    // String baseURL = "https://nuradubaidevapi.onedesk.app/dev/";
-
-    /// Below two lines should be uncommented for dev environment
-    // String dbptr = "nuraho"; // test
-    // String baseURL = "https://api.nura.in/prod/"; // test
-
-    /// Below two lines should be uncommented for prod environment
-    // String baseURL = pref.getString('url') ?? "";
-
-    // String dbptr = 'nura';
     final finalBaseUrl = bUrl ?? baseURL;
     if (finalBaseUrl == null) {
       log(
@@ -94,6 +76,14 @@ class ApiService {
     dio.options.connectTimeout = const Duration(seconds: 120);
     dio.options.receiveTimeout = const Duration(seconds: 120);
     dio.options.headers["db_ptr"] = dbPtr ?? dbptr;
+
+    // Pass the user's NuraId (real_id) supplied by the host as the `realId`
+    // header so the backend can attribute every request to the user.
+    final realId = pref.getString("realId") ?? "";
+    if (realId.isNotEmpty) {
+      dio.options.headers["realId"] = realId;
+    }
+    log('Outgoing realId request header: "$realId"');
 
     if (!dio.interceptors.any((e) => e is TokenInterceptor)) {
       dio.interceptors.add(TokenInterceptor(dio));
@@ -117,7 +107,6 @@ class ApiService {
     }
 
     try {
-      // print("url : $baseURL$url\ndbptr: ${dio.options.headers["db_ptr"]}");
       Response? response;
       switch (method) {
         case ApiMethod.get:
@@ -172,7 +161,7 @@ class ApiService {
           break;
       }
       return response;
-    } on DioException catch (e, stack) {
+    } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
       final responseData = e.response?.data;
 
@@ -185,18 +174,6 @@ class ApiService {
       };
 
       log("API ERROR: $errorInfo");
-
-      // Add useful debug info in Crashlytics
-      FirebaseCrashlytics.instance.setCustomKey("api_url", url);
-      FirebaseCrashlytics.instance.setCustomKey("method", method.name);
-      FirebaseCrashlytics.instance.setCustomKey("status_code", statusCode ?? 0);
-
-      FirebaseCrashlytics.instance.recordError(
-        e,
-        stack,
-        reason: "API request failed",
-        information: [errorInfo.toString()],
-      );
 
       if (statusCode == 500) {
         log("Server error (500)");
@@ -281,14 +258,8 @@ class TokenInterceptor extends Interceptor {
         ),
       );
       return handler.resolve(retryResponse);
-    } catch (e, stack) {
+    } catch (e) {
       log("Unknown API error: $e");
-
-      FirebaseCrashlytics.instance.recordError(
-        e,
-        stack,
-        reason: "Unknown API error",
-      );
     }
     return handler.next(err);
   }
