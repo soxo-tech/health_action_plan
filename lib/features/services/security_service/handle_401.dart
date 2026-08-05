@@ -4,12 +4,11 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<String?> handle401() async {
-  const BASE_URL = String.fromEnvironment('BASE_URL');
-
   final prefs = await SharedPreferences.getInstance();
+  final BASE_URL = prefs.getString('url') ?? '';
   final refreshToken = prefs.getString('refreshToken');
 
-  if (refreshToken == null) return null;
+  if (BASE_URL.isEmpty || refreshToken == null) return null;
 
   final endpoint = '/auth/refresh';
 
@@ -17,6 +16,10 @@ Future<String?> handle401() async {
     endpoint: endpoint,
     method: 'POST',
     body: {"refreshToken": refreshToken},
+    gatewayEnabled: prefs.getBool('apiGatewayEnabled') ?? true,
+    clientId: prefs.getString('clientId'),
+    clientSecret: prefs.getString('clientSecret'),
+    env: prefs.getString('env'),
   );
 
   final res = await http.post(

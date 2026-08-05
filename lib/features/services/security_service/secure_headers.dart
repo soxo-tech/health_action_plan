@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:health_action_plan/features/core/env.dart';
 
 import 'secure_crypto.dart';
 import 'device.dart';
@@ -17,15 +16,22 @@ class SecureHeaderResult {
   });
 }
 
+/// Builds the headers/body for a health-action-plan backend request.
+///
+/// When [gatewayEnabled] is true, the request is HMAC-signed using the
+/// [clientId]/[clientSecret]/[env] supplied by the host via
+/// `HealthActionPlanLauncher`. When false, only a plain `Content-Type`
+/// header is returned, matching the host's own "gateway disabled" plain-call
+/// shape.
 Future<SecureHeaderResult> createSecureHeaders({
   required String endpoint,
   required String method,
   dynamic body,
+  bool gatewayEnabled = true,
+  String? clientId,
+  String? clientSecret,
+  String? env,
 }) async {
-  final CLIENT_ID = Env().CLIENT_ID;
-  final CLIENT_SECRET = Env().CLIENT_SECRET;
-  final env = Env().env;
-
   final httpMethod = method.toUpperCase();
 
   final rawBody = (httpMethod == 'GET' || httpMethod == 'DELETE')
@@ -33,6 +39,30 @@ Future<SecureHeaderResult> createSecureHeaders({
       : (body == null ? '' : (body is String ? body : jsonEncode(body)));
 
   final canonicalEndpoint = cleanNullParams(endpoint);
+
+  if (!gatewayEnabled) {
+    return SecureHeaderResult(
+      canonicalEndpoint: canonicalEndpoint,
+      rawBody: rawBody,
+      headers: {
+        if (httpMethod != 'GET' && httpMethod != 'DELETE')
+          'Content-Type': 'application/json',
+      },
+    );
+  }
+
+  if (clientId == null ||
+      clientId.isEmpty ||
+      clientSecret == null ||
+      clientSecret.isEmpty ||
+      env == null ||
+      env.isEmpty) {
+    throw StateError(
+      'API gateway is enabled but clientId/clientSecret/env were not '
+      'supplied by the host via HealthActionPlanLauncher.',
+    );
+  }
+
   final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
   final nonce = const Uuid().v4();
 
@@ -43,14 +73,14 @@ Future<SecureHeaderResult> createSecureHeaders({
 
   final canonical =
       '$httpMethod\n$canonicalEndpoint\n$timestamp\n$nonce\n$bodyHash';
-  final certToken = hmacSha256Base64Url(CLIENT_SECRET, canonical);
+  final certToken = hmacSha256Base64Url(clientSecret, canonical);
 
   return SecureHeaderResult(
     canonicalEndpoint: canonicalEndpoint,
     rawBody: rawBody,
     headers: {
-      'X-Client-Id': CLIENT_ID,
-      'X-Client-Secret': CLIENT_SECRET,
+      'X-Client-Id': clientId,
+      'X-Client-Secret': clientSecret,
       'X-Cert-Token': certToken,
       'X-Timestamp': timestamp,
       'X-Nonce': nonce,

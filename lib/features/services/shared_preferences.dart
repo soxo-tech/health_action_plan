@@ -25,7 +25,7 @@ class SharedPreferencesService {
 
 /// Controller class for managing and accessing shared preferences values.
 class SharedPreferenceController {
-  /// Sets an initial value for the token.
+  /// Persists the environment config supplied by the host.
   ///
   /// [token] The token string to be saved in SharedPreferences.
   Future<void> setInitialControllerValues({
@@ -33,6 +33,10 @@ class SharedPreferenceController {
     String? baseURL,
     String? dbPtr,
     String? opno,
+    bool? apiGatewayEnabled,
+    String? clientId,
+    String? clientSecret,
+    String? env,
   }) async {
     final pref = await SharedPreferencesService.prefs;
     if (token != null) {
@@ -47,6 +51,18 @@ class SharedPreferenceController {
     // Sent as the `realId` request header on every module API call.
     if (opno != null) {
       await pref.setString("realId", opno);
+    }
+    if (apiGatewayEnabled != null) {
+      await pref.setBool("apiGatewayEnabled", apiGatewayEnabled);
+    }
+    if (clientId != null) {
+      await pref.setString("clientId", clientId);
+    }
+    if (clientSecret != null) {
+      await pref.setString("clientSecret", clientSecret);
+    }
+    if (env != null) {
+      await pref.setString("env", env);
     }
   }
 }
