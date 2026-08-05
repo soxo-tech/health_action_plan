@@ -17,6 +17,22 @@ class HealthActionPlanLauncher extends StatefulWidget {
   final String? dbPtr;
   final bool isStandalone;
 
+  /// Whether calls to the health-action-plan backend should be signed for
+  /// the host's API gateway. When true, [clientId]/[clientSecret]/[env] are
+  /// used to HMAC-sign every request. When false, requests are sent as
+  /// plain calls (still to [baseURL]) with no signature headers.
+  final bool apiGatewayEnabled;
+
+  /// API gateway client id, supplied by the host when [apiGatewayEnabled].
+  final String? clientId;
+
+  /// API gateway client secret, supplied by the host when [apiGatewayEnabled].
+  final String? clientSecret;
+
+  /// API gateway environment tag (e.g. "prod"/"dev"), supplied by the host
+  /// when [apiGatewayEnabled].
+  final String? env;
+
   const HealthActionPlanLauncher({
     super.key,
     required this.opno,
@@ -24,6 +40,10 @@ class HealthActionPlanLauncher extends StatefulWidget {
     this.baseURL,
     this.dbPtr,
     this.isStandalone = false,
+    this.apiGatewayEnabled = true,
+    this.clientId,
+    this.clientSecret,
+    this.env,
   });
 
   @override
@@ -47,6 +67,10 @@ class _HealthActionPlanLauncherState extends State<HealthActionPlanLauncher> {
       baseURL: widget.baseURL,
       dbPtr: widget.dbPtr,
       opno: widget.opno,
+      apiGatewayEnabled: widget.apiGatewayEnabled,
+      clientId: widget.clientId,
+      clientSecret: widget.clientSecret,
+      env: widget.env,
     );
 
     if (mounted) {
