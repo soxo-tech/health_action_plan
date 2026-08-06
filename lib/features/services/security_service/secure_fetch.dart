@@ -7,6 +7,14 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'handle_401.dart';
 
+/// Invoked when a request is still unauthorized after [handle401]'s
+/// refresh-and-retry attempt — i.e. this module's own short-lived session is
+/// unrecoverable. Set by the host via
+/// [HealthActionPlanLauncher.onUnauthorized] so the host app can react (e.g.
+/// force a full app logout); this module has no concept of the host's auth
+/// flow beyond its own access/refresh tokens.
+void Function()? onUnauthorized;
+
 class SecureFetchResponse {
   final bool ok;
   final int status;
@@ -30,7 +38,7 @@ Future<SecureFetchResponse> secureFetch(
   // Base URL, gateway toggle and signing credentials all come from the host
   // via HealthActionPlanLauncher (persisted by SharedPreferenceController) —
   // there is no hardcoded fallback.
-  final BASE_URL = pref.getString('url') ?? '';
+  final baseUrl = pref.getString('url') ?? '';
   final gatewayEnabled = pref.getBool('apiGatewayEnabled') ?? true;
   final gatewayClientId = pref.getString('clientId');
   final gatewayClientSecret = pref.getString('clientSecret');
@@ -38,7 +46,7 @@ Future<SecureFetchResponse> secureFetch(
   final httpMethod = method.toUpperCase();
   String dbptr = pref.getString('dbptr') ?? "";
 
-  if (BASE_URL.isEmpty) {
+  if (baseUrl.isEmpty) {
     log(
       'API ERROR: Base URL is empty. Ensure it is passed to HealthActionPlanLauncher by the host.',
     );
@@ -68,7 +76,7 @@ Future<SecureFetchResponse> secureFetch(
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
-    final fullUrl = BASE_URL + finalEndpoint;
+    final fullUrl = baseUrl + finalEndpoint;
 
     final request = http.Request(
       httpMethod,
@@ -122,6 +130,10 @@ Future<SecureFetchResponse> secureFetch(
     if (newToken != null) {
       response = await makeRequest();
     }
+  }
+
+  if (response.statusCode == 401) {
+    onUnauthorized?.call();
   }
 
   dynamic data;

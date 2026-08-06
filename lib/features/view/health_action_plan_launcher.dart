@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:health_action_plan/features/provider/health_action_plan_provider.dart';
+import 'package:health_action_plan/features/services/security_service/secure_fetch.dart'
+    as secure_fetch;
 import 'package:health_action_plan/features/services/shared_preferences.dart';
 import 'package:health_action_plan/features/view/health_action_plan.dart';
 import 'package:provider/provider.dart';
@@ -33,6 +35,13 @@ class HealthActionPlanLauncher extends StatefulWidget {
   /// when [apiGatewayEnabled].
   final String? env;
 
+  /// Called when one of the module's own API calls comes back 401 and stays
+  /// 401 after the built-in refresh-and-retry attempt — i.e. this module's
+  /// short-lived session can't be recovered on its own. The host should
+  /// treat this as its own auth session being invalid too (e.g. force a full
+  /// app logout), since the same access token underlies both.
+  final VoidCallback? onUnauthorized;
+
   const HealthActionPlanLauncher({
     super.key,
     required this.opno,
@@ -44,6 +53,7 @@ class HealthActionPlanLauncher extends StatefulWidget {
     this.clientId,
     this.clientSecret,
     this.env,
+    this.onUnauthorized,
   });
 
   @override
@@ -60,7 +70,17 @@ class _HealthActionPlanLauncherState extends State<HealthActionPlanLauncher> {
     _initializeModule();
   }
 
+  @override
+  void didUpdateWidget(covariant HealthActionPlanLauncher oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.onUnauthorized != oldWidget.onUnauthorized) {
+      secure_fetch.onUnauthorized = widget.onUnauthorized;
+    }
+  }
+
   Future<void> _initializeModule() async {
+    secure_fetch.onUnauthorized = widget.onUnauthorized;
+
     // Ensure the token and environment config are saved before the view loads
     await SharedPreferenceController().setInitialControllerValues(
       token: widget.token,

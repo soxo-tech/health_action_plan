@@ -27,7 +27,7 @@ class HealthActionPlanProvider extends ChangeNotifier {
         endpoint: Env().healthActionPlanAPI(opno),
       );
 
-      final json = response?.data;
+      final json = response.data;
       log('Health Action Plan: $json');
 
       if (json == null || json['response'] == 'No data found') {
