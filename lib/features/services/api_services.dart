@@ -198,7 +198,7 @@ class ApiService {
 
 class TokenInterceptor extends Interceptor {
   final Dio dio;
-  bool _isRefreshing = false;
+  final bool _isRefreshing = false;
   Completer<void>? _refreshCompleter;
 
   TokenInterceptor(this.dio);

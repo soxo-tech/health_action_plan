@@ -5,7 +5,7 @@
 /// where needed (see `secure_fetch.dart` / `secure_headers.dart`).
 class Env {
   String healthActionPlanAPI(String opno) {
-    return 'appointments/get-yearwise-screening-details/$opno';
+    return '/appointments/get-yearwise-screening-details/$opno';
   }
   //Refresh Token
   String refreshTokenAPI = 'auth/refresh';
