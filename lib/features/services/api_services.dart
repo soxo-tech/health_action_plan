@@ -82,6 +82,11 @@ class ApiService {
     final realId = pref.getString("realId") ?? "";
     if (realId.isNotEmpty) {
       dio.options.headers["realId"] = realId;
+    } else {
+      // [dio] is a static singleton, so its default headers outlive a single
+      // request. Drop any realId left behind by an earlier user rather than
+      // attributing this request to them.
+      dio.options.headers.remove("realId");
     }
     log('Outgoing realId request header: "$realId"');
 
